@@ -1,0 +1,15 @@
+
+                             PNEUMONIA report by i-Lung
+           Patient name:Kumar
+           Age: 89
+           Email id:ayaankumar132@gmail.com
+           Contact no:7004798431
+           
+           Diagnosis:
+           1.chest scan shows doesn't_have_PNEUMONIA.
+           Further advice for treatment: 
+           1. Maintain proper fluid intake to prevent dehydration.
+           2. Get ample rest to aid the body's recovery process.
+           3. use techniques to assist breathing and clear airways.
+           4. Regular medical check-ups to monitor progress.
+          
