@@ -1,7 +1,6 @@
 from flask import Flask
 from flask import render_template, request
 from fpdf import FPDF
-# from base64_pdf import BASE_64
 from keras_preprocessing import image
 from keras.models import load_model
 from keras.applications.vgg16 import preprocess_input
@@ -11,14 +10,28 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
 from email import encoders
+import pymongo
+import hashlib
 
 model = load_model('chest_xray.h5')
 
 app = Flask(__name__, template_folder='static')
 global new
 
+def databaseInsert(name, emailId, age, contact,has,result):
+    client = pymongo.MongoClient("mongodb://localhost:27017")
+    db = client['Pneumonia']
+    collection = db['Pneumonia']
+    dictionary = {"Name": name, "Email-ID": emailId,
+                  "Age": age, "Contact": contact, "Hashed Prediction": has , "Actual Prediction" : result}
+    collection.insert_one(dictionary)
 
-def predict_new(path,name, emailId, username, contact):
+def hashing(to_hash):
+    h = hashlib.new("SHA256")
+    h.update(to_hash.encode())
+    hashed_string = h.hexdigest()
+    return hashed_string
+def predict_new(path,name, emailId, age, contact):
     predictions = ["has_Pneumonia", "doesn't_have_PNEUMONIA"]
     img = image.load_img(path, target_size=(224, 224))
     x = image.img_to_array(img)
@@ -30,16 +43,19 @@ def predict_new(path,name, emailId, username, contact):
     print(result)
     if result == 0:
         a = predictions[0]
+        has = hashing(a)
+        print(has)
         print("Person is Affected By PNEUMONIA")
     else:
         a = predictions[1]
+        has=hashing(a)
         print("Result is Normal")
 
     print(a)
     mm = f"""
                              PNEUMONIA report by i-Lung
            Patient name:{name}
-           Age: {username}
+           Age: {age}
            Email id:{emailId}
            Contact no:{contact}
            
@@ -63,7 +79,7 @@ def predict_new(path,name, emailId, username, contact):
         pdf.cell(200, 8, txt=x, ln=1, align='L')
     print("Done with pdf")
     pdf.output('report.pdf')
-
+    databaseInsert(name, emailId, age, contact, has , a)
     smtp_port = 587
     smtp_server = "smtp.gmail.com"
 
@@ -108,6 +124,7 @@ def predict_new(path,name, emailId, username, contact):
     ay_server.quit()
 
 
+
 @app.route("/", methods=['GET'])
 def hello():
     return render_template('index.html')
@@ -117,15 +134,14 @@ def predict():
     name = request.form['name']
     emailId = request.form['emailId']
     contact = request.form['contact']
-    username = request.form['username']
-    print(name, emailId, contact, username)
+    age = request.form['username']
+    print(name, emailId, contact, age)
     imagefile = request.files['imagefile']
     image_path = "images/" + imagefile.filename
     imagefile.save(image_path)
-    predict_new(image_path, name, emailId, username, contact)
+    predict_new(image_path, name, emailId, age, contact)
     return render_template('index.html')
 
 if __name__ == '__main__':
     app.run(port=3000, debug=True)
-# path = 'D:\\NORMAL2-IM-1436-0001.jpeg'
-# predict_new(path)
+
